@@ -70,77 +70,6 @@ pos_address = 0x300000000 + base_address + 0x54
 player_setpos_bytes = bytes([0xC4, 0xC1, 0x79, 0x7E, 0xC8, 0xC5, 0xFB, 0x11, 0x9D, 0x28, 0x01, 0x00, 0x00, 0x48, 0x8B, 0x8D, 0xC0, 0x00, 0x00, 0x00, 0x48, 0x89, 0x4D, 0x38, 0xC5, 0xF9, 0x7E, 0xC1, 0xC5, 0xEB, 0x58, 0x95, 0x48, 0x01, 0x00, 0x00, 0xC5, 0xEB, 0x5A, 0xD2, 0xC5, 0xEA, 0x5A, 0xDA, 0xC5, 0xF9, 0x7E, 0xD2, 0xC5, 0xFB, 0x11, 0x9D, 0x30, 0x01, 0x00, 0x00, 0x0F, 0x38, 0xF1, 0x4C, 0x18, 0x54, 0x44, 0x0F, 0x38, 0xF1, 0x44, 0x18, 0x58, 0x0F, 0x38, 0xF1, 0x54, 0x18, 0x5C])
 """ The assembly for what the player's final position is set to """
 
-def all_found(list):
-    for i in range(len(list)):
-        if list[i] < 0:
-            return False
-    return True
-
-def read_connected(chunk1, chunk2, chunksize, i):
-    if i < chunksize:
-        return chunk1[i][0]
-    else:
-        return chunk2[i-chunksize][0]
-
-def maprange(oldmin, oldmax, newmin, newmax, val):
-    fac = (val-oldmin)/(oldmax-oldmin)
-    return newmin + fac*(newmax-newmin)
-
-def scanMemory(the_bytes: list[bytes], chunksize = 1048576):
-    results = [-1 for i in range(len(the_bytes))]
-    chunk1 = create_string_buffer(chunksize)
-    chunk2 = create_string_buffer(chunksize)
-    bytes_read = c_size_t(0)
-
-    start   = 0x0800000000
-    end     = 0x3000000000
-    i = start
-    ReadProcessMemory(processHandle, c_void_p(i), chunk2, chunksize, byref(bytes_read))
-    if bytes_read.value <= 0:
-        print("Couldn't read memory!")
-    lasttime = time.time_ns()
-    while i < end:
-        if not i % 0x5000000:
-            print(f"Read 0x5mil ({maprange(start, end, 0, 100.0, i)}%, {(time.time_ns() - lasttime) / 1000000.0}ms)...")
-            lasttime = time.time_ns()
-        i += chunksize
-        chunk1 = chunk2
-        ReadProcessMemory(processHandle, c_void_p(i), chunk2, chunksize, byref(bytes_read))
-        if bytes_read.value <= 0:
-            print("Couldn't read memory!")
-        for j in range(len(the_bytes)):
-            ln = len(the_bytes[j])
-            if results[j] >= 0:
-                continue
-
-            k = 0
-            while k < chunksize:
-                l = 0
-                while l < ln:
-                    lk = k + l
-                    if lk < chunksize:
-                        c = chunk1[lk][0]
-                    else:
-                        c = chunk2[lk - chunksize][0]
-                    if c != the_bytes[j][l]:
-                        break
-                    l += 1
-                if l == ln:
-                    results[j] = i+k
-                k += 1
-        
-        if all_found(results):
-            break
-    
-    return results
-
-# TODO?:
-# nop the 3 movs
-# mov [rip+???], rax
-# sleep for spf
-# read rip+???
-# nop that out, we have pos_address
-
 move = [[False, False], [False, False], [False, False]]
 move_sensitivity = 20
 
@@ -179,24 +108,10 @@ def key_pressed(key):
 def key_released(key):
     set_mov(get_kv(key), False)
 
-pos = [-18000.0, -300.0, 4000.0]
-
-#print("Scanning memory...")
-#scan_res = scanMemory([player_setpos_bytes])
-#scan_text = ["Player location"]
-#print("Got results:")
-#for i in range(len(scan_res)):
-#    print(scan_text[i])
-#    if scan_res[i] > 0:
-#        print(hex(scan_res[i]))
-#    else:
-#        print("Didn't find")
-#    print("")
-#exit()
+pos = [0.0, 0.0, 0.0]
 
 listener = pynput.keyboard.Listener(on_press=key_pressed, on_release=key_released)
 listener.start()
-#listener.join()
 print("Working...")
 while not stop:
     for i in range(3):
