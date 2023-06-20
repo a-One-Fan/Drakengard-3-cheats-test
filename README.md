@@ -9,4 +9,4 @@ Here's a preview gif:
 
 ![flying preview](preview_fly.gif)
 
-For using the script (control.py): Turn off any multiplayer games to not flat any anti-cheats. Get python (preferably 3.10), and cheat engine. Open up cheat engine and RPCS3. Run the script, e.g. double click it. Follow its instructions.
+For using the script (control.py): Turn off any multiplayer games to not flag any anti-cheats. Get python (preferably 3.10), and cheat engine. Open up cheat engine and RPCS3. Run the game, get into a level, run the script, e.g. double click it. Follow its instructions.
